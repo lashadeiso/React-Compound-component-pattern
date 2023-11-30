@@ -1,70 +1,123 @@
-# Getting Started with Create React App
+Compound component pattern პატერნის საშუალებით შეგვიძლია შევქმნათ რამოდენიმე კომპონენტი რომლებიც 
+იქნება დაკავშირებული ერთ დიდ super კომპონენტთან. უფრო მარტივად რომ წარმოვიდგინოთ,ჯერ ვქმნით 
+მშობელ კომპონენტს და მას შემდეგ ვანაწევრებთ სხვადასხვა პატარ-პატარა კომპონენტებად.თუმცა მათ 
+გამოყენებას აზრი აქვს მშობელ კომპონენტთან ერთად, მისი კარგი მაგალითია html ში select და option ელემენტები.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+მაგალითად drop down ისთვის როდესაც ვქნით:
+<select>
+  <option>1</option>
+  <option>2</option>
+  <option>3</option>
+</select>
+ 
+ეხლა კი განვიხილოთ compound component pattern ის მაგალითი:
 
-## Available Scripts
+function Counter() {                         გვაქვს Counter კომპონენტი
+  return <span>Counter</span>;
+}
 
-In the project directory, you can run:
+export default Counter;
 
-### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
 
-### `npm test`
+import Counter from "./Counter";
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+export default function App() {
+  return (
+    <div>
+      <h1>Compound Component Pattern</h1>
+      <Counter/>                            რომელსაც ვიძახებთ App კომპონენტში და ვარენდერებთ მას
+    </div>
+  );
+}
 
-### `npm run build`
+წარმოვიდგინოთ რომ Counter კომპონენტი არის,ზემოთ ხსენებული super,ანუ მშობელი კომპონენტი.
+ეხლა კი დავწეროთ კოდი და განვმარტოთ თითოეული დეტალი:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+import { createContext, useContext, useState } from "react";
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+                                                     
+// 1. Create a context                              როგორც ვიცით,აღნიშნული კომპონენტი უნდა დავანაწევროთ პატარ-პატარა კომპონენტებად,
+const CounterContext = createContext();             იმისათვის რომ მისი state ხელმისაწვდომი იყოს ყველა დანაწევრებული კომპონენტისთვის
+                                                    ამისათვის იდიალური საშულება არის context ის გამოყენება.ამიტომაც პირველ რიგში 
+                                                    შევქმენით ის.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### `npm run eject`
+// 2. Create parent component                             შევქმენით საკვანძო ობიექტი,რომელსაც აქვს state და აღნიშნულ state ზე მანიპულრიების
+function Counter({ children }) {                          ორი ფუნქცია,შესაბამისად საჭიროა მათი გატანა context ში,და provider ის საშულებით
+  const [count, setCount] = useState(0);                  გადავცემთ დანაწევრებულ კომპონენტებს
+  const increase = () => setCount((c) => c + 1);
+  const decrease = () => setCount((c) => c - 1);
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+  return (
+    <CounterContext.Provider value={{ count, increase, decrease }}>
+      <span>{children}</span>
+    </CounterContext.Provider>
+  );
+}
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+// 3. Create child components to help implementing the common task      მსწორედ ეს ფუნქციები არის დანაწევრებული კომპონენტები,რომელთა გამოძახებაც შეგვიძლია
+function Count() {                                                      ერთმანეთის დამოუკიდებლად,რამდნჯერაც გვინდა და რა თანმიმდევრობითაც გვინდა.
+  const { count } = useContext(CounterContext);                        
+  return <span>{count}</span>;
+}
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+function Label({ children }) {
+  return <span>{children}</span>;
+}
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+function Increase({ icon }) {
+  const { increase } = useContext(CounterContext);
+  return <button onClick={increase}>{icon}</button>;
+}
 
-## Learn More
+function Decrease({ icon }) {
+  const { decrease } = useContext(CounterContext);
+  return <button onClick={decrease}>{icon}</button>;
+}
+// 4. Add child components as proeprties to parent component           აქ კი ვამატებთ იმ დანაწევრებულ კომპონენტებს როგორც მშობელი კომპონენტის ფროფერთიები
+Counter.Count = Count;                                                 ანუ მაგალითად Counter.Count ეგრე დეფაულტად არ არსებობს თუ კი ის არ შევქმენით
+Counter.Label = Label;                                                 რაც იმას ნიშნავს რომ ის უნდა გავუტოლოდ რამეს,ჩვენს შემთხვევაში Count ფუნქციას(კომპონენტს)
+Counter.Increase = Increase;
+Counter.Decrease = Decrease;
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+export default Counter;
 
-To learn React, check out the [React documentation](https://reactjs.org/).
 
-### Code Splitting
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+ეხლა კი დროა ვნახოთ მისი გამოყენების მაგალით App კომპონენტში:
 
-### Analyzing the Bundle Size
+import Counter from "./Counter";
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+export default function App() {
+  return (
 
-### Making a Progressive Web App
+    <div>                                                                     პირველი გამოძახება
+      <h1>Compound Component Pattern</h1>                                        
+        <Counter>
+         <Counter.Label>My super flexible counter</Counter.Label>
+         <Counter.Decrease icon="-" />
+         <Counter.Increase icon="+" />
+         <Counter.Count />
+      </Counter>
+    </div>
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+      <div>                                                                   მეორე გამოძახება
+        <Counter>
+          <Counter.Decrease icon="◀️" />
+          <div>
+            <Counter.Count />
+          </div>
+          <Counter.Increase icon="▶️" />
+        </Counter>
+      </div>
 
-### Advanced Configuration
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+  );
+}
 
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+როგორც ხედავთ 2 ადგილას გამოვიძახეთ ჩვენი Counter კომპონენტის შვილობილი კომპონენტები,
+რომელთაც თითოეულს გადავცემთ სხვადასხვა მნიშვნელობებს მაგალითად თუ კი Counter.Decrease
+კომპონენტს პირველად icon ად "-" გადავეცი,მეორე გამოძახების დროს "◀️" გადავეცით.
+ასევე ეს კომპონენტები სხვადასხვა თანმიმდევრობით გამოვიძახეთ. მოკლედ,დავყავით და ვიბატონეთ..
