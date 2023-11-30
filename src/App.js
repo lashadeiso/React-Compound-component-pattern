@@ -1,24 +1,32 @@
-import logo from './logo.svg';
-import './App.css';
+import "./styles.css";
+import Modal from "./ui/Modal";
+import Button from "./ui/Button";
+import GlobalStyles from "./styles/GlobalStyles";
+import CreateForm from "./features/CreateForm";
+import TableFrom from "./features/TableFrom";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <GlobalStyles />
+      <Modal>
+        {/* მოდალი 1 */}
+        <Modal.Open modalName="modal-1">
+          <Button>Modal 1</Button>
+        </Modal.Open>
+        <Modal.Window windowName="modal-1">
+          <CreateForm />
+        </Modal.Window>
+
+        {/* მოდალი 2 */}
+        <Modal.Open opens="modal-2">
+          <Button>Modal 2</Button>
+        </Modal.Open>
+        <Modal.Window window="window-2">
+          <TableFrom />
+        </Modal.Window>
+      </Modal>
+    </>
   );
 }
 
